@@ -89,11 +89,11 @@ window.FIGURES = { sawtooth: sawtooth(), doublenat: doublenat(),
 
 /* ── protocol layers view ───────────────────────────────── */
 (function renderLayers(){
-  var h = '<div class="pagehead"><p class="eyebrow">Chapter 1 · Protocol layers and service models</p>'+
-    '<h1>Five envelopes around one sentence</h1>'+
+  var h = '<div class="pagehead"><p class="eyebrow-s">Chapter 1 · Protocol layers and service models</p>'+
+    '<h1>Five envelopes around <em>one sentence</em></h1>'+
     '<p>Nobody designed the internet as one enormous program. It was cut into five layers, each of which does one job and is forbidden from caring how the layer below does its own. That is why Wi-Fi could be invented without rewriting the web, and why your fibre upgrade did not break WhatsApp.</p></div>';
   h += encap();
-  h += '<p class="eyebrow">Click any layer</p><div class="layerstack">';
+  h += '<p class="eyebrow-s">Click any layer</p><div class="layerstack">';
   LAYERS.forEach(function(L){
     h += '<button class="layerrow" data-layer="'+L.id+'" style="--lc:var(--'+L.zone+');--lbg:var(--'+L.zone+'-bg)">'+
       '<span class="lnum">'+L.n+'</span><span>'+
@@ -103,7 +103,9 @@ window.FIGURES = { sawtooth: sawtooth(), doublenat: doublenat(),
       '</span></button>';
   });
   h += '</div>';
-  h += '<div class="pagehead" style="margin-top:34px"><h1 style="font-size:19px">Why bother splitting it up?</h1>'+
+  h += '<div class="sect-h" style="margin-top:clamp(44px,6vw,72px)"><p class="klabel">The point of layering</p>'+
+    '<h2>Why bother <em>splitting it up</em>?</h2>'+
+    '<p>Because every layer can then be replaced without touching the others. Copper became fibre and layer 3 never noticed. TCP became QUIC and your browser kept working. The cost is real \u2014 headers repeated on every packet, and information that one layer knows being hidden from another that could have used it \u2014 and it has been worth paying for fifty years.</p></div>';
     '<p>Because every layer can then be replaced without touching the others. Copper became fibre and layer 3 never noticed. TCP became QUIC and your browser kept working. The cost is real — headers repeated on every packet, and information that one layer knows being hidden from another that could have used it — and it has been worth paying for fifty years.</p></div>';
   $('#layerswrap').innerHTML = h;
   Array.prototype.forEach.call(document.querySelectorAll('.layerrow'), function(b){
@@ -144,8 +146,8 @@ function wireCards(root){
   });
 }
 function renderTopics(){
-  var h = '<div class="pagehead"><p class="eyebrow">The whole curriculum, in plain language</p>'+
-    '<h1>Everything the map does not have room for</h1>'+
+  var h = '<div class="pagehead"><p class="eyebrow-s">The whole curriculum, in plain language</p>'+
+    '<h1>Everything the map <em>does not</em> have room for</h1>'+
     '<p>Twenty-four ideas that make up a networking course, each written the way you would explain it to a friend — with the analogy first, the theory second, and what it means for your own connection at the end.</p></div><div class="groups">';
   TOPICS.forEach(function(g){
     h += '<section class="group"><h2>'+g.group+'<span class="gline"></span></h2><p class="gsub">'+g.sub+'</p><div class="cards">';
@@ -174,7 +176,7 @@ q.addEventListener('input', function(){
   var ml = LAYERS.filter(function(l){ return text(l).indexOf(v) > -1; });
   var mt = allTopics.filter(function(t){ return text(t).indexOf(v) > -1; });
   var total = mn.length + ml.length + mt.length;
-  var h = '<div class="pagehead"><p class="eyebrow">Search</p><h1>'+total+' result'+(total === 1 ? '' : 's')+' for “'+
+  var h = '<div class="pagehead"><p class="eyebrow-s">Search</p><h1>'+total+' result'+(total === 1 ? '' : 's')+' for “'+
     q.value.replace(/</g,'&lt;')+'”</h1></div><div class="groups">';
   if(!total) h += '<p class="empty">Nothing matched. Try <b>NAT</b>, <b>DNS</b>, <b>fibre</b>, <b>congestion</b>, <b>5G</b> or <b>TLS</b>.</p>';
   if(mn.length){
@@ -253,11 +255,11 @@ window.__ncAfterOpen = function(d, kind){
 
 /* ── addressable URLs: every box and concept has its own link ── */
 var route = (function(){
-  var VIEW = { map:'#/', layers:'#/layers', topics:'#/concepts' };
+  var VIEW = { home:'#/', map:'#/map', layers:'#/layers', topics:'#/concepts' };
   var last = null, applying = false;
   function currentView(){
-    var b = document.querySelector('.tabs button[aria-selected="true"]');
-    return b ? b.dataset.view : 'map';
+    var b = document.querySelector('.nav button[aria-selected="true"]');
+    return b ? b.dataset.view : 'home';
   }
   function set(h){
     if(applying || !h) return;
@@ -276,7 +278,7 @@ var route = (function(){
     applying = true;
     try {
       var parts = h.replace(/^#\/?/, '').split('/');
-      var head = parts[0] || 'map', id = decodeURIComponent(parts[1] || '');
+      var head = parts[0] || 'home', id = decodeURIComponent(parts[1] || '');
       if(head === 'device' && nc.byId[id]){
         nc.show('map'); nc.openDetail(nc.byId[id], 'node'); nc.focusNode(id); return;
       }
@@ -289,7 +291,8 @@ var route = (function(){
         if(T){ nc.show('topics'); nc.openDetail(T, 'topic'); return; }
       }
       nc.closeDetail();
-      nc.show(head === 'layers' ? 'layers' : (head === 'concepts' ? 'topics' : 'map'));
+      nc.show(head === 'layers' ? 'layers' : head === 'concepts' ? 'topics'
+            : head === 'map' ? 'map' : 'home');
     } finally { applying = false; }
   }
   return { set:set, mark:mark, apply:apply, view:VIEW, currentView:currentView };
@@ -302,8 +305,18 @@ window.__nc.show = nc.show;
 window.addEventListener('hashchange', route.apply);
 
 /* ── open at rest, showing the whole shape ──────────────── */
+(function heroArt(){
+  var host = document.getElementById('heroart');
+  if(!host || !window.HEXFIELD) return;
+  var tmp = document.createElement('div');
+  tmp.innerHTML = window.HEXFIELD;
+  var svg = tmp.querySelector('svg');
+  if(!svg) return;
+  svg.style.minWidth = '560px';
+  host.className = 'sc';
+  host.appendChild(svg);
+})();
 requestAnimationFrame(function(){
-  nc.fit();
   if((location.hash || '').length > 2) route.apply();
 });
 })();

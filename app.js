@@ -162,7 +162,7 @@ var MIN = 0.26, MAX = 1.7;
 
 function apply(){
   world.style.transform = 'translate('+tx+'px,'+ty+'px) scale('+sc+')';
-  view.classList.toggle('low-zoom', sc < 0.55);
+  view.classList.toggle('low-zoom', sc < 0.72);
 }
 function glide(fn){
   if(REDUCED){ fn(); apply(); return; }
@@ -321,7 +321,10 @@ function openDetail(d, kind){
   body.scrollTop = 0;
   drawer.hidden = false;
   requestAnimationFrame(function(){ drawer.classList.add('open'); });
-  if(window.innerWidth <= 860){ scrim.hidden = false; requestAnimationFrame(function(){ scrim.style.opacity = 1; }); }
+  var overList = $('#mapview').hidden;
+  if(window.innerWidth <= 860 || overList){
+    scrim.hidden = false; requestAnimationFrame(function(){ scrim.style.opacity = overList ? .32 : 1; });
+  }
   NODES.forEach(function(n){ n._el.setAttribute('aria-current', String(n === d)); });
   if(window.__ncAfterOpen) window.__ncAfterOpen(d, kind);
 }
@@ -444,17 +447,25 @@ $('#resetbtn').onclick = function(){ reset(); fit(); };
 pStep.textContent = 'The journey · '+JOURNEY.length+' steps';
 
 /* ── tabs ───────────────────────────────────────────────── */
-var views = { map:$('#mapview'), layers:$('#layersview'), topics:$('#topicsview') };
+var views = { home:$('#homeview'), map:$('#mapview'), layers:$('#layersview'), topics:$('#topicsview') };
+var fitted = false;
 function show(name){
+  if(!views[name]) name = 'home';
   Object.keys(views).forEach(function(k){ views[k].hidden = k !== name; });
-  Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function(b){
+  Array.prototype.forEach.call(document.querySelectorAll('.nav button'), function(b){
     b.setAttribute('aria-selected', String(b.dataset.view === name));
   });
-  if(name === 'map') requestAnimationFrame(apply);
+  if(name === 'map') requestAnimationFrame(function(){
+    if(!fitted){ fitted = true; fit(); } else apply();
+  });
 }
-Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function(b){
-  b.onclick = function(){ show(b.dataset.view); };
+Array.prototype.forEach.call(document.querySelectorAll('.nav button, .brand, [data-go]'), function(b){
+  b.onclick = function(){ show(b.dataset.view || b.dataset.go); };
 });
+$('#herosend').onclick = function(){
+  show('map');
+  setTimeout(function(){ reset(); play(); }, 420);
+};
 
 /* ── theme ──────────────────────────────────────────────── */
 function isDark(){

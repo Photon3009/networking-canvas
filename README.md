@@ -39,7 +39,7 @@ root of the default branch.
 
 | File | What it does |
 | --- | --- |
-| `index.html` | The document: design tokens, all page styles, markup shell |
+| `index.html` | Design tokens, all page styles, the landing page and the app shell |
 | `sketch.js` | Hand-drawn SVG toolkit — seeded wobbly ink, hatching, stipple, paper grain |
 | `art.js` | One illustration per device, drawn with the toolkit into a 100 × 74 box |
 | `scene.js` | One animated explainer diagram per device, shown when you open its panel |
@@ -69,7 +69,8 @@ between the light and dark themes.
 Every box and concept is addressable, so you can link straight to one:
 
 ```
-#/                    the map
+#/                    the landing page
+#/map                 the map
 #/layers              protocol layers
 #/concepts            all concepts
 #/device/bng          a box on the map      (ids in data-map.js)
@@ -85,3 +86,16 @@ Editing the prose never requires touching the rendering code.
 
 To move a box on the map, change its `x`/`y` in `data-map.js`; the connecting
 lines, arrows and labels re-route themselves.
+
+## Design
+
+One accent (terracotta), a near-white ground in light and a warm near-black in dark,
+soft layered shadows instead of borders where possible, and a single hairline border
+weight everywhere else.
+
+Type is Instrument Sans for the interface, Instrument Serif italic for the accented
+words in headings, and IBM Plex Mono for anything that is data — addresses, ports,
+latencies, labels on the drawings.
+
+Colours live only in `:root` and its two dark overrides in `index.html`; nothing else
+in the codebase hardcodes a colour, so retheming is a single block.
