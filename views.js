@@ -87,11 +87,18 @@ function doublenat(){
 window.FIGURES = { sawtooth: sawtooth(), doublenat: doublenat(),
   cells: window.HEXFIELD || '', handover: window.HANDOVER || '' };
 
+/* an isometric illustration in a tinted well */
+function art(id, cls, arg){
+  var A = window.ART;
+  return '<span class="artwell '+(cls||'')+'" aria-hidden="true"><svg viewBox="3 0 154 108">'+(A && A[id] ? A[id](arg) : '')+'</svg></span>';
+}
+
 /* ── protocol layers view ───────────────────────────────── */
 (function renderLayers(){
-  var h = '<div class="pagehead"><p class="eyebrow-s">Chapter 1 · Protocol layers and service models</p>'+
+  var h = '<div class="splithead"><div class="pagehead"><p class="eyebrow-s">Chapter 1 · Protocol layers and service models</p>'+
     '<h1>Five envelopes around <em>one sentence</em></h1>'+
-    '<p>Nobody designed the internet as one enormous program. It was cut into five layers, each of which does one job and is forbidden from caring how the layer below does its own. That is why Wi-Fi could be invented without rewriting the web, and why your fibre upgrade did not break WhatsApp.</p></div>';
+    '<p>Nobody designed the internet as one enormous program. It was cut into five layers, each of which does one job and is forbidden from caring how the layer below does its own. That is why Wi-Fi could be invented without rewriting the web, and why your fibre upgrade did not break WhatsApp.</p></div>'+
+    art('stack', 'z-net headart')+'</div>';
   h += encap();
   h += '<p class="eyebrow-s">Click any layer</p><div class="layerstack">';
   LAYERS.forEach(function(L){
@@ -100,13 +107,13 @@ window.FIGURES = { sawtooth: sawtooth(), doublenat: doublenat(),
       '<h3>'+L.name+' <em>'+L.unit+'</em></h3>'+
       '<p>'+L.blurb+'</p>'+
       '<div class="lproto">'+L.protos+'</div>'+
-      '</span></button>';
+      '</span>'+art('stack', 'lwell2', L.n)+'</button>';
   });
   h += '</div>';
-  h += '<div class="sect-h" style="margin-top:clamp(44px,6vw,72px)"><p class="klabel">The point of layering</p>'+
+  h += '<div class="splithead why"><div class="sect-h"><p class="klabel">The point of layering</p>'+
     '<h2>Why bother <em>splitting it up</em>?</h2>'+
-    '<p>Because every layer can then be replaced without touching the others. Copper became fibre and layer 3 never noticed. TCP became QUIC and your browser kept working. The cost is real \u2014 headers repeated on every packet, and information that one layer knows being hidden from another that could have used it \u2014 and it has been worth paying for fifty years.</p></div>';
-    '<p>Because every layer can then be replaced without touching the others. Copper became fibre and layer 3 never noticed. TCP became QUIC and your browser kept working. The cost is real — headers repeated on every packet, and information that one layer knows being hidden from another that could have used it — and it has been worth paying for fifty years.</p></div>';
+    '<p>Because every layer can then be replaced without touching the others. Copper became fibre and layer 3 never noticed. TCP became QUIC and your browser kept working. The cost is real \u2014 headers repeated on every packet, and information that one layer knows being hidden from another that could have used it \u2014 and it has been worth paying for fifty years.</p></div>'+
+    art('swap', 'z-access headart')+'</div>';
   $('#layerswrap').innerHTML = h;
   Array.prototype.forEach.call(document.querySelectorAll('.layerrow'), function(b){
     b.onclick = function(){
@@ -120,8 +127,9 @@ window.FIGURES = { sawtooth: sawtooth(), doublenat: doublenat(),
 var allTopics = [];
 TOPICS.forEach(function(g){ g.items.forEach(function(t){ allTopics.push(t); }); });
 
-function cardHTML(t, kindLabel){
-  return '<button class="card" data-topic="'+t.id+'">'+
+function cardHTML(t, kindLabel, n){
+  return '<button class="card z-'+(t.zone||'core')+'" data-topic="'+t.id+'">'+
+    (n ? '<span class="cnum">'+(n < 10 ? '0' : '')+n+'</span>' : '')+
     '<h3>'+t.title+'</h3><p>'+(t.one||t.sub||'')+'</p>'+
     '<span class="chip z-'+(t.zone||'core')+'">'+(kindLabel || t.chapter)+'</span></button>';
 }
@@ -146,12 +154,19 @@ function wireCards(root){
   });
 }
 function renderTopics(){
-  var h = '<div class="pagehead"><p class="eyebrow-s">The whole curriculum, in plain language</p>'+
+  var h = '<div class="splithead"><div class="pagehead"><p class="eyebrow-s">The whole curriculum, in plain language</p>'+
     '<h1>Everything the map <em>does not</em> have room for</h1>'+
-    '<p>Twenty-four ideas that make up a networking course, each written the way you would explain it to a friend — with the analogy first, the theory second, and what it means for your own connection at the end.</p></div><div class="groups">';
+    '<p>Twenty-four ideas that make up a networking course, each written the way you would explain it to a friend — with the analogy first, the theory second, and what it means for your own connection at the end.</p></div>'+
+    art('resolver', 'z-core headart')+'</div><div class="groups">';
+  var GART = { 'Foundations':'backbone', 'Application layer':'gdc', 'Transport layer':['stack',4],
+    'Network layer':'ixp', 'Link layer and LANs':'router', 'Wireless and mobile':'tower',
+    'Network security':'lock', 'See it yourself':'laptop' };
+  var num = 0;
   TOPICS.forEach(function(g){
-    h += '<section class="group"><h2>'+g.group+'<span class="gline"></span></h2><p class="gsub">'+g.sub+'</p><div class="cards">';
-    g.items.forEach(function(t){ h += cardHTML(t); });
+    var ga = GART[g.group] || 'backbone';
+    h += '<section class="group"><div class="ghead z-'+(g.zone||'core')+'">'+art(ga.pop ? ga[0] : ga, '', ga.pop ? ga[1] : 0)+
+      '<div><p class="gk">'+g.items.length+' concept'+(g.items.length === 1 ? '' : 's')+'</p><h2>'+g.group+'</h2><p class="gsub">'+g.sub+'</p></div></div><div class="cards">';
+    g.items.forEach(function(t){ h += cardHTML(t, null, ++num); });
     h += '</div></section>';
   });
   h += '</div>';

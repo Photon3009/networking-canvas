@@ -1,8 +1,11 @@
-/* sketch.js — hand-drawn SVG primitives: wobbly ink, hatching, stipple, grain.
+/* sketch.js — SVG drawing primitives: clean ink, halftone shading, stipple, grain.
+   The API still speaks in "wobble" and "hatch" terms from the hand-drawn era, but the
+   output is now crisp: WOBBLE scales every jitter, and hatching renders as halftone dots.
    Everything is deterministic (seeded) so the art never re-rolls between renders. */
 window.SK = (function(){
 'use strict';
 function f(n){ return Math.round(n*10)/10; }
+var WOBBLE = 0;   /* 0 = ruler-straight; 1 = the old hand-drawn jitter */
 function prng(seed){
   var s = (seed>>>0) || 2463534242;
   return function(){ s ^= s<<13; s>>>=0; s ^= s>>17; s ^= s<<5; s>>>=0; return s/4294967296; };
@@ -10,7 +13,7 @@ function prng(seed){
 
 /* ── shape builders (return point arrays) ───────────────── */
 function rrect(x, y, w, h, r, steps){
-  r = Math.min(r, w/2, h/2); steps = steps || 4;
+  r = Math.min(r, w/2, h/2); steps = Math.max(steps || 0, 8);
   var p = [], i, a;
   function arc(cx, cy, a0, a1){
     for(i = 0; i <= steps; i++){ a = a0 + (a1-a0)*i/steps; p.push([cx+Math.cos(a)*r, cy+Math.sin(a)*r]); }
@@ -39,7 +42,7 @@ function blob(cx, cy, rx, ry, n, amp, seed){
 /* ── wobbly path from points ────────────────────────────── */
 function d(pts, close, amp, seed){
   var R = prng(seed||7), s = '', i, x, y;
-  amp = amp === undefined ? 0.9 : amp;
+  amp = (amp === undefined ? 0.9 : amp) * WOBBLE;
   for(i = 0; i < pts.length; i++){
     x = pts[i][0] + (R()-0.5)*amp*2;
     y = pts[i][1] + (R()-0.5)*amp*2;
@@ -49,6 +52,7 @@ function d(pts, close, amp, seed){
 }
 /* smooth wobbly path (quadratic through midpoints) — for organic outlines */
 function ds(pts, close, amp, seed){
+  amp = (amp || 0) * WOBBLE;
   var R = prng(seed||11), q = pts.map(function(p){
     return [p[0]+(R()-0.5)*amp*2, p[1]+(R()-0.5)*amp*2];
   });
@@ -71,14 +75,10 @@ function ds(pts, close, amp, seed){
   return s + 'L'+f(q[q.length-1][0])+' '+f(q[q.length-1][1]);
 }
 
-/* ── ink: two slightly-offset passes, like a pen gone over twice ── */
+/* ── ink: one clean stroke ─────────────────────────────── */
 function ink(path, color, w, seed, op){
-  var R = prng(seed||3);
-  return '<path d="'+path+'" fill="none" stroke="'+(color||'var(--ink)')+'" stroke-width="'+(w||1.6)+
-    '" stroke-linecap="round" stroke-linejoin="round" opacity="'+(op===undefined?1:op)+'"/>'+
-    '<path d="'+path+'" fill="none" stroke="'+(color||'var(--ink)')+'" stroke-width="'+((w||1.6)*0.55)+
-    '" stroke-linecap="round" stroke-linejoin="round" opacity="'+((op===undefined?1:op)*0.5)+
-    '" transform="translate('+f((R()-0.5)*1.3)+' '+f((R()-0.5)*1.3)+')"/>';
+  return '<path d="'+path+'" fill="none" stroke="'+(color||'var(--ink)')+'" stroke-width="'+f((w||1.6)*0.82)+
+    '" stroke-linecap="round" stroke-linejoin="round" opacity="'+(op===undefined?1:op)+'"/>';
 }
 function fill(path, color, op){
   return '<path d="'+path+'" fill="'+color+'" opacity="'+(op===undefined?1:op)+'" stroke="none"/>';
@@ -91,29 +91,16 @@ function clip(path){
   return { id:id, def:'<clipPath id="'+id+'"><path d="'+path+'"/></clipPath>' };
 }
 function hatch(clipId, box, angle, gap, color, w, op, seed, dash){
-  var cx = box.x+box.w/2, cy = box.y+box.h/2;
-  var R0 = Math.hypot(box.w, box.h)/2 + 6;
-  var R = prng(seed||5), s = '', y, y1, y2, x1, x2;
-  for(y = cy-R0; y <= cy+R0; y += gap){
-    y1 = y + (R()-0.5)*gap*0.4; y2 = y1 + (R()-0.5)*1.4;
-    x1 = cx-R0 + R()*5; x2 = cx+R0 - R()*5;
-    s += '<line x1="'+f(x1)+'" y1="'+f(y1)+'" x2="'+f(x2)+'" y2="'+f(y2)+'"/>';
-  }
-  return '<g clip-path="url(#'+clipId+')" transform="rotate('+angle+' '+f(cx)+' '+f(cy)+')" stroke="'+color+
-    '" stroke-width="'+(w||0.7)+'" opacity="'+(op===undefined?0.3:op)+'" stroke-linecap="round"'+
-    (dash ? ' stroke-dasharray="'+dash+'"' : '')+'>'+s+'</g>';
+  /* halftone: a rotated grid of dots instead of ruled lines */
+  var id = 'ht'+(++cid), g = Math.max(gap*0.9, 2.2), r = f(Math.min(g*0.3, 0.55 + (w||0.7)*0.55));
+  var cx = box.x+box.w/2, cy = box.y+box.h/2, R0 = Math.hypot(box.w, box.h)/2 + 4;
+  return '<defs><pattern id="'+id+'" width="'+f(g)+'" height="'+f(g)+'" patternUnits="userSpaceOnUse"'+
+    ' patternTransform="rotate('+angle+' '+f(cx)+' '+f(cy)+')"><circle cx="'+f(g/2)+'" cy="'+f(g/2)+'" r="'+r+
+    '" fill="'+color+'"/></pattern></defs><rect clip-path="url(#'+clipId+')" x="'+f(cx-R0)+'" y="'+f(cy-R0)+
+    '" width="'+f(R0*2)+'" height="'+f(R0*2)+'" fill="url(#'+id+')" opacity="'+f(Math.min(1,(op===undefined?0.3:op)*1.5))+'"/>';
 }
 /* short broken strokes scattered inside a shape — the "pencil tooth" of the reference art */
-function tooth(clipId, box, angle, n, color, w, op, seed, len){
-  var R = prng(seed||9), s = '', i, x, y, L;
-  for(i = 0; i < n; i++){
-    x = box.x + R()*box.w; y = box.y + R()*box.h; L = (len||7)*(0.5+R());
-    s += '<line x1="'+f(x)+'" y1="'+f(y)+'" x2="'+f(x+L)+'" y2="'+f(y+(R()-0.5)*1.5)+'"/>';
-  }
-  return '<g clip-path="url(#'+clipId+')" transform="rotate('+angle+' '+f(box.x+box.w/2)+' '+f(box.y+box.h/2)+
-    ')" stroke="'+color+'" stroke-width="'+(w||0.8)+'" opacity="'+(op===undefined?0.35:op)+
-    '" stroke-linecap="round">'+s+'</g>';
-}
+function tooth(){ return ''; }   /* pencil scratches retired with the hand-drawn look */
 function stipple(clipId, box, n, color, r, seed, op){
   var R = prng(seed||13), s = '', i;
   for(i = 0; i < n; i++){

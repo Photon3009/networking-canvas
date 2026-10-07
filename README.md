@@ -40,8 +40,9 @@ root of the default branch.
 | File | What it does |
 | --- | --- |
 | `index.html` | Design tokens, all page styles, the landing page and the app shell |
-| `sketch.js` | Hand-drawn SVG toolkit — seeded wobbly ink, hatching, stipple, paper grain |
-| `art.js` | One illustration per device, drawn with the toolkit into a 100 × 74 box |
+| `sketch.js` | SVG toolkit for the scenes — clean ink, halftone shading, stipple, paper grain (set `WOBBLE` above 0 to bring back the hand-drawn jitter) |
+| `iso.js` | Isometric kit — boxes, cylinders, faces, cables and contact shadows, lit from the upper left |
+| `art.js` | One isometric illustration per device, drawn with `iso.js` into a 160 × 112 box, plus the layer-stack and padlock art for the reading pages |
 | `scene.js` | One animated explainer diagram per device, shown when you open its panel |
 | `bigscenes.js` | Full-scale scenes for the physical world: the flat, the street, the exchange |
 | `bigscenes2.js` | Full-scale scenes for the carrier core and open internet, incl. the India maps |
@@ -50,6 +51,7 @@ root of the default branch.
 | `data-topics.js` | The five protocol layers and 24 concept explainers |
 | `app.js` | Map rendering, pan/zoom, the journey player, the inspector drawer |
 | `views.js` | Layers and Concepts pages, the diagrams, search, and URL routing |
+| `landing.js` | The landing page's journey card and illustrated tiles, composed from `art.js` |
 
 Every map node opens with a full-scale scene plus a tighter mechanism diagram beneath it.
 Big figures are marked `figure.zoom` and open full-screen when clicked.
@@ -60,7 +62,7 @@ city positions are accurate; the backbone routes between them are illustrative.
 The explainer animations are CSS-driven (`offset-path`, `stroke-dashoffset`), so they
 switch off automatically under `prefers-reduced-motion`.
 
-All the artwork is generated as SVG at runtime from seeded pseudo-randomness —
+All the artwork is generated as SVG at runtime —
 there are no image files, so it stays sharp at any zoom and recolours itself
 between the light and dark themes.
 
@@ -89,13 +91,17 @@ lines, arrows and labels re-route themselves.
 
 ## Design
 
-One accent (terracotta), a near-white ground in light and a warm near-black in dark,
+Illustrations are isometric: solid fills, a light top face, a shaded right face with a
+fine halftone, and a soft contact shadow, set in a tinted well that matches the object's
+territory. The map cards, landing tiles and reading-page headers all use the same wells.
+
+One accent (terracotta), used sparingly; a near-white ground in light and a near-black in dark,
 soft layered shadows instead of borders where possible, and a single hairline border
 weight everywhere else.
 
-Type is Instrument Sans for the interface, Instrument Serif italic for the accented
-words in headings, and IBM Plex Mono for anything that is data — addresses, ports,
-latencies, labels on the drawings.
+Type is Geist for everything you read, set at medium weight with tight tracking, and Geist
+Mono only for data: addresses, ports, latencies and the big figures on the landing page.
+Hierarchy comes from size and grey, not from colour or weight.
 
 Colours live only in `:root` and its two dark overrides in `index.html`; nothing else
 in the codebase hardcodes a colour, so retheming is a single block.

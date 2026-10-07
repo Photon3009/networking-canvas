@@ -6,7 +6,7 @@
 var S = window.SK, N = 5000;
 function sd(){ return (N += 13); }
 var VW = 820, VH = 534;
-var SZ = 60, W = Math.sqrt(3)*SZ, H = 1.5*SZ, COLS = 7, ROWS = 5, OX = 52, OY = 56;
+var SZ = 60, W = Math.sqrt(3)*SZ, H = 1.5*SZ, COLS = 7, ROWS = 5, OX = 52, OY = 62;
 var GROUPS = [
   { c:'var(--c-green)',  a:  22, n:'f1' },
   { c:'var(--c-orange)', a: -34, n:'f2' },
@@ -86,7 +86,7 @@ var defs = '', land = '', grid = '', back = '', masts = '', over = '';
   }
   /* the trunk out to the operator's core */
   var last = cell(COLS-1, 2);
-  var trunk = S.ds([[last.x,last.y],[last.x+62,last.y+34],[VW-152,VH-92],[VW-112,VH-78]], false, 2.4, sd());
+  var trunk = S.ds([[last.x,last.y],[last.x+66,last.y+12],[VW-18,last.y+88],[VW-24,last.y+170],[VW-81,VH-106]], false, 2.4, sd());
   back += '<path d="'+trunk+'" fill="none" stroke="var(--c-yellow)" stroke-width="4" opacity=".95" stroke-linecap="round"/>';
 })();
 
@@ -119,23 +119,27 @@ var defs = '', land = '', grid = '', back = '', masts = '', over = '';
 
 /* ── labels and legend ──────────────────────────────────── */
 (function(){
-  var by = VH - 98;
-  var cb = S.d(S.rrect(VW-112, by, 100, 42, 7), true, 1.2, sd());
-  over += S.shape(cb, {x:VW-112, y:by, w:100, h:42}, { fill:'var(--core-bg)', shade:'var(--core)',
-    gap:5, shadeOp:.22, seed:sd(), w:2, inkColor:'var(--core)' }).svg;
-  over += '<text x="'+(VW-62)+'" y="'+(by+18)+'" text-anchor="middle" class="sc-l">Mobile core</text>';
-  over += '<text x="'+(VW-62)+'" y="'+(by+32)+'" text-anchor="middle" class="sc-s">then the internet</text>';
+  /* the operator's core, where every backhaul trunk ends */
+  var cx = VW-150, cy = VH-104, cw = 138, ch = 48;
+  over += '<rect x="'+cx+'" y="'+(cy+3)+'" width="'+cw+'" height="'+ch+'" rx="9" fill="var(--ink)" opacity=".08"/>'+
+    '<rect x="'+cx+'" y="'+cy+'" width="'+cw+'" height="'+ch+'" rx="9" fill="var(--core-bg)" stroke="var(--core)" stroke-width="1.8"/>'+
+    '<rect x="'+(cx+10)+'" y="'+cy+'" width="26" height="3" rx="1.5" fill="var(--core)"/>';
+  over += '<text x="'+(cx+cw/2)+'" y="'+(cy+21)+'" text-anchor="middle" class="sc-l" style="font-size:16px">Mobile core</text>';
+  over += '<text x="'+(cx+cw/2)+'" y="'+(cy+36)+'" text-anchor="middle" class="sc-t" style="font-size:12px">then the internet</text>';
 
-  var lx = 20, ly = VH - 26;
+  /* one legend strip under the field, clear of every cell */
+  var ly = VH - 22, px = 12, pw = VW - 24, fs = 14;
+  function lt(x, t){ return '<text x="'+x+'" y="'+(ly+5)+'" class="sc-t" style="font-size:'+fs+'px" text-anchor="start">'+t+'</text>'; }
+  function sep(x){ return '<line x1="'+x+'" y1="'+(ly-11)+'" x2="'+x+'" y2="'+(ly+11)+'" stroke="var(--border-2)"/>'; }
+  over += '<rect x="'+px+'" y="'+(ly-20)+'" width="'+pw+'" height="40" rx="10" fill="var(--surface)" opacity=".94" stroke="var(--border-2)"/>';
   GROUPS.forEach(function(G, i){
-    var p = S.d(hexPts(lx + 26 + i*74, ly, 13), true, 1, sd());
-    over += '<path d="'+p+'" fill="'+G.c+'" opacity=".3"/>';
-    over += '<path d="'+p+'" fill="none" stroke="'+G.c+'" stroke-width="1.6"/>';
-    over += '<text x="'+(lx + 44 + i*74)+'" y="'+(ly+4)+'" class="sc-t" text-anchor="start">'+G.n+'</text>';
+    var x = px + 26 + i*62, p = S.d(hexPts(x, ly, 11), true, 0, sd());
+    over += '<path d="'+p+'" fill="'+G.c+'" fill-opacity=".35" stroke="'+G.c+'" stroke-width="1.8" stroke-linejoin="round"/>';
+    over += lt(x + 17, G.n);
   });
-  over += '<text x="'+(lx + 246)+'" y="'+(ly+4)+'" class="sc-t" text-anchor="start">'+
-    'no two touching cells share a frequency</text>';
-  over += '<text x="'+(VW-20)+'" y="40" class="sc-t" text-anchor="end">yellow = backhaul, the wire out of every mast</text>';
+  over += sep(px + 196) + lt(px + 210, 'neighbours never share a frequency');
+  over += sep(px + 536) + '<line x1="'+(px+552)+'" y1="'+ly+'" x2="'+(px+578)+'" y2="'+ly+'" stroke="var(--c-yellow)" stroke-width="4" stroke-linecap="round"/>' + lt(px + 586, 'backhaul');
+  over += '<line x1="'+(px+678)+'" y1="'+ly+'" x2="'+(px+704)+'" y2="'+ly+'" stroke="var(--c-red)" stroke-width="2.6" stroke-dasharray="6 5" stroke-linecap="round"/>' + lt(px + 712, 'handover');
 })();
 
 var FIG = '<figure class="sc zoom" data-title="Why it is called cellular">'+

@@ -8,7 +8,7 @@ var REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var SVGNS = 'http://www.w3.org/2000/svg';
 
 /* ── build the map ──────────────────────────────────────── */
-var NW = 200, NH = 132, HW = NW/2, HH = NH/2;
+var NW = 212, NH = 164, HW = NW/2, HH = NH/2;
 var nodesLayer = $('#nodes'), edgesSvg = $('#edges'), world = $('#world');
 var edgeEls = {};
 
@@ -24,19 +24,6 @@ function border(a, b){
   var ty = dy === 0 ? Infinity : (HH+5)/Math.abs(dy);
   var t = Math.min(tx, ty);
   return { x: a.x + dx*t, y: a.y + dy*t };
-}
-function wobbleFrom(el, amp, seed){
-  var len = el.getTotalLength(); if(!len) return el.getAttribute('d');
-  var n = Math.max(6, Math.round(len/24)), R = SK.prng(seed), pts = [], i, t, p, q, dx, dy, m, o;
-  for(i = 0; i <= n; i++){
-    t = len*i/n;
-    p = el.getPointAtLength(t);
-    q = el.getPointAtLength(Math.min(len, t+1.5));
-    dx = q.x-p.x; dy = q.y-p.y; m = Math.hypot(dx, dy) || 1;
-    o = (R()-0.5)*amp*2 * ((i === 0 || i === n) ? 0.12 : 1);
-    pts.push([p.x - dy/m*o, p.y + dx/m*o]);
-  }
-  return SK.ds(pts, false, 0.6, seed+7);
 }
 function mkpath(cls, d){
   var el = document.createElementNS(SVGNS,'path');
@@ -64,17 +51,16 @@ function buildEdges(){
     var seed = 400 + n*37;
     var g = document.createElementNS(SVGNS,'g');
     g.setAttribute('class','eg z-'+e[3]+(e[4] ? ' alt' : ''));
-    g.appendChild(mkpath('a', wobbleFrom(geom, 2.4, seed)));
-    g.appendChild(mkpath('b', wobbleFrom(geom, 4.2, seed+13)));
-    /* a hand-drawn arrow tick, three-quarters along, so direction reads */
+    g.appendChild(mkpath('a', d));
+    /* a small filled arrowhead, three-quarters along, so direction reads */
     var L = geom.getTotalLength();
     if(L > 60){
       var tip = geom.getPointAtLength(L*0.76), back = geom.getPointAtLength(L*0.76-9);
       var ax = tip.x-back.x, ay = tip.y-back.y, am = Math.hypot(ax,ay) || 1;
       ax /= am; ay /= am;
-      var w1 = [tip.x - ax*9 - ay*5.5, tip.y - ay*9 + ax*5.5];
-      var w2 = [tip.x - ax*9 + ay*5.5, tip.y - ay*9 - ax*5.5];
-      g.appendChild(mkpath('a', SK.d([w1,[tip.x,tip.y],w2], false, 0.7, seed+21)));
+      var w1 = [tip.x - ax*9 - ay*5, tip.y - ay*9 + ax*5];
+      var w2 = [tip.x - ax*9 + ay*5, tip.y - ay*9 - ax*5];
+      g.appendChild(mkpath('tip', 'M'+w1+'L'+tip.x+','+tip.y+'L'+w2+'Z'));
     }
     edgesSvg.appendChild(g);
     edgeEls[e[0]+'|'+e[1]] = { g:g, geom:geom };
@@ -104,10 +90,10 @@ function buildEdges(){
 }
 
 var ZONE_TITLES = [
-  { x:300,  y:36, zone:'home',   t:'YOUR HOME' },
-  { x:1020, y:36, zone:'access', t:'AIRTEL\u2019S LAST MILE' },
-  { x:1560, y:36, zone:'core',   t:'AIRTEL\u2019S NETWORK \u00b7 AS9498' },
-  { x:2040, y:36, zone:'net',    t:'THE OPEN INTERNET' }
+  { x:300,  y:36, zone:'home',   t:'Your home' },
+  { x:1020, y:36, zone:'access', t:'Airtel\u2019s last mile' },
+  { x:1560, y:36, zone:'core',   t:'Airtel\u2019s network \u00b7 AS9498' },
+  { x:2040, y:36, zone:'net',    t:'The open internet' }
 ];
 function buildZoneTitles(){
   ZONE_TITLES.forEach(function(z){
@@ -120,18 +106,6 @@ function buildZoneTitles(){
     edgesSvg.insertBefore(t, edgesSvg.firstChild);
   });
 }
-function nodePanel(seed){
-  var body = SK.d(SK.rrect(4,4,192,124,11,5), true, 1.4, seed);
-  var shade = SK.d(SK.rrect(9,9,192,124,11,5), true, 1.4, seed+5);
-  var c = SK.clip(body);
-  return '<svg class="n-panel" viewBox="0 0 202 134" aria-hidden="true">'+
-    '<defs>'+c.def+'</defs>'+
-    '<path class="p-shadow" d="'+shade+'"/>'+
-    '<path class="p-fill" d="'+body+'"/>'+
-    SK.hatch(c.id, {x:4,y:4,w:192,h:124}, 34, 8, 'var(--ink)', 0.55, 0.06, seed+11, '3 8')+
-    '<path class="p-edge" d="'+body+'" fill="none" stroke-width="2.6" stroke-linejoin="round" stroke-linecap="round"/>'+
-    '</svg>';
-}
 function buildNodes(){
   NODES.forEach(function(n, i){
     var el = document.createElement('button');
@@ -140,8 +114,7 @@ function buildNodes(){
     el.dataset.id = n.id;
     el.setAttribute('aria-current','false');
     var draw = (window.ART && window.ART[n.id]) ? window.ART[n.id]() : '';
-    el.innerHTML = nodePanel(700 + i*53)+
-      '<svg class="n-art" viewBox="0 0 100 74" aria-hidden="true">'+draw+'</svg>'+
+    el.innerHTML = '<span class="n-well"><svg class="n-art" viewBox="3 0 154 108" aria-hidden="true">'+draw+'</svg></span>'+
       '<span class="n-cap"><span class="n-title">'+n.title+'</span>'+
       '<span class="n-sub">'+n.sub+'</span></span>';
     el.addEventListener('click', function(){
